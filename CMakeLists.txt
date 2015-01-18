@@ -91,7 +91,11 @@ add_subdirectory(src)
 add_subdirectory(src/client)
 
 #make install
-install(FILES ${EXECUTABLE_OUTPUT_PATH}/* DESTINATION saker)
+install(DIRECTORY ${EXECUTABLE_OUTPUT_PATH} DESTINATION saker
+        PATTERN "*"
+        PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+                    GROUP_EXECUTE GROUP_READ
+                    WORLD_EXECUTE)
 
 #cpack
 include (InstallRequiredSystemLibraries)

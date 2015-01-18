@@ -74,9 +74,11 @@
 #endif
 
 /* Test for backtrace() */
+#if 0
 #if defined(OS_UNIX)
 #include <unistd.h>
 #define HAVE_BACKTRACE 1
+#endif
 #endif
 
 

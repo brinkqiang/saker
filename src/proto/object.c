@@ -614,6 +614,3 @@ int equalObjects( robj *a, robj *b ) {
     decrRefCount(b);
     return cmp;
 }
-
-
-

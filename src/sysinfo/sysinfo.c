@@ -112,7 +112,6 @@ static const sysinfoMap sysinfo_map[] = {
     {"system.net.if.total",          NET_IF_TOTAL},
     {"system.net.if.collisions",     NET_IF_COLLISIONS},
 
-
     {"system.kernel.maxfiles" ,      KERNEL_MAXFILES },
     {"system.kernel.maxproc" ,       KERNEL_MAXPROC },
 
@@ -129,22 +128,9 @@ static const sysinfoMap sysinfo_map[] = {
     {"system.proc.mem.pused" ,       PROC_MEMORY_PUSED },
     {"system.proc.cpu.load" ,        PROC_CPU_LOAD },
     {"system.proc.all",              PROC_STATINFO },
-    /*
-    {"system.kernel.maxproc" ,       KERNEL_MAXPROC },
-    {"system.kernel.maxproc" ,       KERNEL_MAXPROC },
-    */
-    /*
-    {"system.cpu.num.online",        SYSTEM_CPU_NUM_ONLINE},
-    {"system.boottime",              SYSTEM_BOOTTIME},
-    {"system.cpu.num.online",        SYSTEM_CPU_NUM_ONLINE},
-    {"system.cpu.num.max",           SYSTEM_CPU_NUM_MAX},
-    {"system.cpu.num.load",          SYSTEM_CPU_LOAD},
-    {"system.mem.total",             VM_MEMORY_TOTAL},
-    {"system.cpu.num.online",        SYSTEM_CPU_NUM_ONLINE}
-    */
+
     {NULL,NULL}
 };
-
 
 int initSysinfoDic(void) {
     int idx;
@@ -161,7 +147,6 @@ int initSysinfoDic(void) {
     }
     return UGOK;
 }
-
 
 void freeSysinfoDic(void) {
     if (g_dict_sysinfo_function) {
@@ -248,4 +233,3 @@ END:
 
     return ret;
 }
-

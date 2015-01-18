@@ -1,4 +1,3 @@
-
 #ifndef _SYSINFO__H_
 #define _SYSINFO__H_
 

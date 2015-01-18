@@ -148,13 +148,12 @@ static void loadCommand(ugClient *c) {
     }
 }
 
-
 static void execCommand(ugClient *c) {
     dictEntry *node;
     /* param index */
-    int   idx=1;
+    int   idx = 1;
     robj *primarykey = c->argv[0];
-    if (strcasecmp(c->argv[0]->ptr, "exec")==0) {
+    if (strcasecmp(primarykey->ptr, "exec")==0) {
         if (c->argc == 1) {
             addReplyErrorFormat(c,  "wrong number of arguments for '%s' command",  c->argv[0]) ;
             return;
@@ -163,15 +162,15 @@ static void execCommand(ugClient *c) {
         idx = 2;
     }
 
-    if ((node=dictFind(server.tasks, primarykey->ptr)) != NULL) {
+    if ((node=dictFind(server.tasks, primarykey->ptr)) == NULL) {
+        addReplyErrorFormat(c, "can not find for 'exec' '%s'", primarykey->ptr);
+    } else {
         ugTaskType *ptask = dictGetEntryVal(node);
-        const char *pret = NULL;
-        int    ret = 0;
-        int   top = lua_gettop(server.ls);
+        int  call_ret = 0;
         int luatbl_idx = 1;
         /* the same as :
-                   lua_getglobal(server.ls, ptask->func);
-              */
+               lua_getglobal(server.ls, ptask->func);
+        */
         lua_rawgeti(server.ls, LUA_REGISTRYINDEX, ptask->handle);
         lua_createtable(server.ls, c->argc - idx, 0);
         for (; idx < c->argc; idx++) {
@@ -180,38 +179,71 @@ static void execCommand(ugClient *c) {
             lua_pushstring(server.ls, c->argv[idx]->ptr);
             lua_settable(server.ls , -3);
             /* the same as :
-                    lua_pushstring(server.ls, c->argv[idx]);
-                    lua_rawseti(server.ls, -2, idx-1);
-                    */
+               lua_pushstring(server.ls, c->argv[idx]);
+               lua_rawseti(server.ls, -2, idx-1);
+            */
         }
 
-        if ((ret = lua_pcall(server.ls, 1, 2, 0)) != 0) {
+        if (lua_pcall(server.ls, 1, 2, 0) != 0) {
             addReplyErrorFormat(c, "exec failed for '%s' errmsg:'%s'", ptask->func, lua_tostring(server.ls, -1));
             lua_pop(server.ls, 1);
             return ;
         }
 
-        ugAssert(lua_isboolean(server.ls, -2));
-        ret = lua_tointeger(server.ls, -2);
-
-        if (!lua_isnil(server.ls, -1))  pret = lua_tostring(server.ls, -1);
-
-        if (pret) {
-            robj *o = createStringObject((char *)pret, strlen(pret));
-            addReplyBulk(c, o);
-            decrRefCount(o);
-        } else {
-            if (ret == UGOK) addReplyStatusFormat(c, "exec successed for '%s'", ptask->func);
-            else addReplyErrorFormat(c, "exec successed ,but return fail for '%s'", ptask->func );
+        if (!lua_isboolean(server.ls, -2)) {
+            addReplyErrorFormat(c, "exec '%s' errmsg:'return values is wrong, the first type must boolean", ptask->func);
+            lua_pop(server.ls, 2);
+            return ;
         }
 
+        call_ret = lua_toboolean(server.ls, -2);
+
+        if (!call_ret) {
+            if (lua_isnil(server.ls, -1)) {
+                addReplyErrorFormat(c, "exec successed ,but return fail for '%s'", ptask->func);
+            } else {
+                int type = lua_type(server.ls, -1);
+                if (type == LUA_TSTRING) {
+                    addReplyErrorFormat(c, lua_tostring(server.ls, -1));
+                } else {
+                    addReplyErrorFormat(c, "cannot support second return type '%s'", lua_typename(server.ls, type));
+                }
+            }
+            lua_pop(server.ls, -2);
+            return;
+        }
+        /* the lua function return true */
+        if (lua_isnil(server.ls, -1)) {
+            addReplyStatusFormat(c, "exec successed for '%s'", ptask->func);
+        } else {
+            int type = lua_type(server.ls, -1);
+            if (type == LUA_TNUMBER) {
+                addReplyLongLong(c, (long long)lua_tonumber(server.ls, -1));
+            } else if (type == LUA_TSTRING) {
+                const char* v = lua_tostring(server.ls, -1);
+                robj *o = createStringObject((char*)v, strlen(v));
+                addReplyBulk(c, o);
+                decrRefCount(o);
+            } else if (type == LUA_TTABLE) {
+                /* traverse table */
+                int len =lua_rawlen(server.ls, -1);
+                addReplyMultiBulkLen(c, (long)len);
+                lua_pushnil(server.ls);
+                while (lua_next(server.ls, -2)) {
+                    const char* v = lua_tostring(server.ls, -1);
+                    robj *o =createStringObject((char*)v, v ? strlen(v) : 0);
+                    addReplyBulk(c, o);
+                    decrRefCount(o);
+                    lua_pop(server.ls, 1);
+                }
+            } else {
+                addReplyErrorFormat(c, "cannot support second return lua type '%s'", lua_typename(server.ls, type));
+            }
+        }
         /* consume stack ,avoid memory increase*/
-        lua_settop(server.ls, top);
-    } else {
-        addReplyErrorFormat(c, "can not find for 'exec' '%s'", primarykey->ptr);
+        lua_pop(server.ls, 2);
     }
 }
-
 
 static void unloadCommand(ugClient *c) {
     dictEntry *node;
@@ -231,8 +263,6 @@ static void unloadCommand(ugClient *c) {
         }
     }
 }
-
-
 
 /* Functions managing dictionary of callbacks for pub/sub. */
 static unsigned int callbackHash(const void *key) {
@@ -278,9 +308,8 @@ ugCommand *lookupCommand(char *key) {
     dictEntry *de = dictFind(server.commands, key);
     if (de) {
         return dictGetEntryVal(de);
-    }
-    /* custom cmd */
-    else if (dictFind(server.tasks, key)) {
+    } else if (dictFind(server.tasks, key)) {
+        /* custom cmd */
         de = dictFind(server.commands, "exec");
         if (de) return dictGetEntryVal(de);
     }

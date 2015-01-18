@@ -7,16 +7,15 @@
 #include "utils/logger.h"
 #include "common/defines.h"
 
-static const char *default_configfile="config";
-
+static const char *default_configfile=APPNAME".conf";
 
 /**
  *   for init config
  */
 static const char *luacode = LOGFILE_PATH"   ./"APPNAME".log"ENDFLAG
                              LOGFILE_LEVEL"  debug"ENDFLAG
-                             SCRIPT_DIR"  ./script"ENDFLAG
-                             PIDFILE_DIR"  ./pid"ENDFLAG
+                             SCRIPT_DIR"  ."ENDFLAG
+                             PIDFILE_DIR"  ."ENDFLAG
                              WORK_INTERVAL"   5000 "ENDFLAG
                              BIND"    127.0.0.1"ENDFLAG
                              LOCAL_PORT"   12007"ENDFLAG
