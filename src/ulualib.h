@@ -32,11 +32,9 @@ LUAMOD_API int (luaopen_cmsgpack) (lua_State *L);
 #define LUA_REDISNAME "hiredis"
 LUAMOD_API int (luaopen_hiredis) (lua_State *L);
 
+#define LUA_SQLITE3 "sqlite3"
+LUAMOD_API int (luaopen_lsqlite3) (lua_State *L);
+
 extern const luaL_Reg ulualib[];
 
 #endif
-
-
-
-
-

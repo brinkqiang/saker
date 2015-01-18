@@ -4,11 +4,13 @@ set(BinName ${PROJECT_NAME})
 set(DepLibs 
      ${DepLibs}
      m
+     dl
+     pthread
      libhiredis.a
      liblua.a
     )
 
-set(EventSourcesFile 
+set(AeSrcFile 
     event/zmalloc.c
     event/adlist.c
     event/ae.c
@@ -17,8 +19,13 @@ set(EventSourcesFile
     event/sds.c
 )
 
+set(SqliteSrcFile
+    ${SqliteDir}/sqlite3.c
+    )
+    
 set(SubDir . utils core service sysinfo plugins proto luacompat)
-list(APPEND BinSrcs ${EventSourcesFile})
+list(APPEND BinSrcs ${AeSrcFile})
+list(APPEND BinSrcs ${SqliteSrcFile})
 
 foreach(TheDir ${SubDir})
     aux_source_directory(${TheDir} BinSrcs)
@@ -38,7 +45,7 @@ endif()
 
 source_group(sysinfo FILES ${SysInfoSours})
 include_directories(${PROJECT_SOURCE_DIR}/deps)
-include_directories(${PROJECT_SOURCE_DIR}/deps/lua/src)
+include_directories(${SqliteDir})
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/src/event)
 

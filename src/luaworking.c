@@ -1,4 +1,5 @@
 #include "luaworking.h"
+#include <unistd.h>
 #include "common/common.h"
 #include "utils/ulist.h"
 #include "utils/path.h"

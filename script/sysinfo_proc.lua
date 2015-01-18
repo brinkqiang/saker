@@ -1,6 +1,6 @@
 
-function SysInfo_Proc()
-    saker.log(LOG_INFO, "This is SysInfo_Proc")
+function sysinfo_example()
+    saker.log(LOG_INFO, "This is sysinfo_example")
     -- get pid 
     local AppName = ""
     if saker.uname() == "WIN" then
@@ -38,4 +38,4 @@ function SysInfo_Proc()
     return true
 end
     
-saker.register("SysInfo_Proc", "SysInfo_Proc", PROP_CYCLE)
+saker.register("sysinfo_example", "sysinfo_example", PROP_CYCLE)

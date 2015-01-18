@@ -40,6 +40,7 @@ endif ()
 
 set(ThdInstallDir ${PROJECT_SOURCE_DIR}/cmake_build/thd-usr)
 set(ThdDir ${PROJECT_SOURCE_DIR}/deps)
+set(SqliteDir ${PROJECT_SOURCE_DIR}/deps/sqlite-3.8.8)
 
 include_directories(${ThdInstallDir}/include)
 

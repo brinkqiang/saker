@@ -37,5 +37,6 @@ const luaL_Reg ulualib[] = {
     {LUA_JSONNAME ,  luaopen_cjson},
     {LUA_MSGPAKCNAME,luaopen_cmsgpack},
     {LUA_REDISNAME,  luaopen_hiredis},
+    {LUA_SQLITE3,    luaopen_lsqlite3},
     {NULL,NULL}
 };

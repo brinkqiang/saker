@@ -1,5 +1,5 @@
 
-function Args_Example(args)
+function args_example(args)
     if type(args) ~= "table" then
       return false, "Wrong args"
     end
@@ -10,4 +10,4 @@ function Args_Example(args)
     return true,"a","b"
 end
 
-saker.register("Args_Example", "Args_Example", PROP_PASSIVITY)
+saker.register("args_example", "args_example", PROP_PASSIVITY)

@@ -14,4 +14,4 @@ function procinfo(args)
     end
 end
     
-saker.register("procinfo", "procinfo", PROP_PASSIVITY)
+--saker.register("procinfo", "procinfo", PROP_PASSIVITY)

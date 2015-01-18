@@ -20,8 +20,8 @@ proc_table['system32']={
     ['check']= 'no'
 }
 
-function Json_Example()
-  saker.log(LOG_INFO, "This is Json_Example")
+function json_example()
+  saker.log(LOG_INFO, "This is json_example")
   
   saker.log(LOG_INFO, "encode double table json string: \n"..json.encode(proc_table))
   
@@ -43,4 +43,4 @@ function Json_Example()
   return true
 end
 
-saker.register("Json_Example", "Json_Example", PROP_ONCE)
+saker.register("json_example", "json_example", PROP_ONCE)

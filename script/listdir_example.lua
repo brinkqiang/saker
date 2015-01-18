@@ -1,6 +1,6 @@
 
-function ListFile_Example()
-    saker.log(LOG_INFO, "This is ListFile_Example")
+function lsfile_example()
+    saker.log(LOG_INFO, "This is lsfile_example")
     local files,err = saker.ls(".")
     if files == nil then 
         return false, "ls failed"
@@ -18,4 +18,4 @@ function ListFile_Example()
     return true
 end
 
-saker.register("ListFile_Example", "ListFile_Example", PROP_ONCE)
+saker.register("lsfile_example", "lsfile_example", PROP_ONCE)

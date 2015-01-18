@@ -1,5 +1,5 @@
 
-function pidof_Example()
+function pidof_example()
     local pid, err = saker.pidof("/var/run/nginx.pid", "*nginx*")
     if pid ~= nil then 
       print("nginx pid is "..pid)
@@ -7,4 +7,4 @@ function pidof_Example()
     return false, err
 end
 
-saker.register("pidof_Example", "pidof_Example", PROP_CYCLE)
+--saker.register("pidof_example", "pidof_example", PROP_CYCLE)

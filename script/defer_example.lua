@@ -1,8 +1,8 @@
 
 -- saker退出时执行
-function Defer_Example()
-    saker.log(LOG_INFO, "This is Defer_Example")
+function defer_example()
+    saker.log(LOG_INFO, "This is defer_example")
     return true
 end
 
-saker.register("Defer_Example", "Defer_Example", PROP_DEFER)
+saker.register("defer_example", "defer_example", PROP_DEFER)
