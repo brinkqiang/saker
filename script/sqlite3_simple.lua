@@ -12,6 +12,7 @@ function sqlite3_example()
     for row in db:nrows("SELECT * FROM test") do
       print(row.id, row.content)
     end
+    return true
 end
 
 saker.register("sqlite3_example", "sqlite3_example", PROP_CYCLE)

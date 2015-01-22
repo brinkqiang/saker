@@ -65,9 +65,9 @@
 #define ERR(s, c) if(opterr){\
   char errbuf[2] = {0};\
   errbuf[0] = c; errbuf[1] = '\n';\
-  (void) fprintf(stderr, argv[0]);\
-  (void) fprintf(stderr, s);\
-  (void) fprintf(stderr, errbuf);}
+  (void) fprintf(stderr, "%s", argv[0]);\
+  (void) fprintf(stderr, "%s", s);\
+  (void) fprintf(stderr, "%s", errbuf);}
 
 
 int opterr = 1;

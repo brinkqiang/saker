@@ -41,8 +41,10 @@
 #define lua_strlen lua_rawlen
 /* luaL_typerror always used with arg at ndx == NULL */
 #define luaL_typerror(L,ndx,str) luaL_error(L,"bad argument %d (%s expected, got nil)",ndx,str)
+
 /* luaL_register used once, so below expansion is OK for this case */
 #define luaL_register(L,name,reg) lua_newtable(L);luaL_setfuncs(L,reg,0)
+
 /* luaL_openlib always used with name == NULL */
 #define luaL_openlib(L,name,reg,nup) luaL_setfuncs(L,reg,nup)
 
@@ -1301,8 +1303,10 @@ static void db_update_hook_callback(void *user, int op, char const *dbname, char
     sdb *db = (sdb*)user;
     lua_State *L = db->L;
     int top = lua_gettop(L);
+    /* unused variable */
+    /*
     lua_Number n;
-
+    */
     /* setup lua callback call */
     lua_rawgeti(L, LUA_REGISTRYINDEX, db->update_hook_cb);    /* get callback */
     lua_rawgeti(L, LUA_REGISTRYINDEX, db->update_hook_udata); /* get callback user data */

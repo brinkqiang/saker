@@ -9,6 +9,8 @@
 #include "service/register.h"
 #include "saker.h"
 
+static void luaReplyToRedisReply(ugClient *c, lua_State *lua);
+
 static void authCommand(ugClient *c);
 
 static void usageCommand(ugClient *c);
@@ -90,7 +92,6 @@ static void quitCommand(ugClient *c) {
     addReply(c, shared.ok);
 }
 
-
 static void shutdownCommand(ugClient *c) {
     freeServer(&server);
     exit(0);
@@ -166,7 +167,7 @@ static void execCommand(ugClient *c) {
         addReplyErrorFormat(c, "can not find for 'exec' '%s'", primarykey->ptr);
     } else {
         ugTaskType *ptask = dictGetEntryVal(node);
-        int  call_ret = 0;
+        int  err = 0;
         int luatbl_idx = 1;
         /* the same as :
                lua_getglobal(server.ls, ptask->func);
@@ -183,65 +184,15 @@ static void execCommand(ugClient *c) {
                lua_rawseti(server.ls, -2, idx-1);
             */
         }
+        err = lua_pcall(server.ls, 1, 1, 0);
+        lua_gc(server.ls, LUA_GCSTEP, 1);
 
-        if (lua_pcall(server.ls, 1, 2, 0) != 0) {
+        if (err) {
             addReplyErrorFormat(c, "exec failed for '%s' errmsg:'%s'", ptask->func, lua_tostring(server.ls, -1));
-            lua_pop(server.ls, 1);
-            return ;
-        }
-
-        if (!lua_isboolean(server.ls, -2)) {
-            addReplyErrorFormat(c, "exec '%s' errmsg:'return values is wrong, the first type must boolean", ptask->func);
-            lua_pop(server.ls, 2);
-            return ;
-        }
-
-        call_ret = lua_toboolean(server.ls, -2);
-
-        if (!call_ret) {
-            if (lua_isnil(server.ls, -1)) {
-                addReplyErrorFormat(c, "exec successed ,but return fail for '%s'", ptask->func);
-            } else {
-                int type = lua_type(server.ls, -1);
-                if (type == LUA_TSTRING) {
-                    addReplyErrorFormat(c, lua_tostring(server.ls, -1));
-                } else {
-                    addReplyErrorFormat(c, "cannot support second return type '%s'", lua_typename(server.ls, type));
-                }
-            }
-            lua_pop(server.ls, -2);
-            return;
-        }
-        /* the lua function return true */
-        if (lua_isnil(server.ls, -1)) {
-            addReplyStatusFormat(c, "exec successed for '%s'", ptask->func);
+            lua_pop(server.ls, 1); /* Consume the Lua reply. */
         } else {
-            int type = lua_type(server.ls, -1);
-            if (type == LUA_TNUMBER) {
-                addReplyLongLong(c, (long long)lua_tonumber(server.ls, -1));
-            } else if (type == LUA_TSTRING) {
-                const char* v = lua_tostring(server.ls, -1);
-                robj *o = createStringObject((char*)v, strlen(v));
-                addReplyBulk(c, o);
-                decrRefCount(o);
-            } else if (type == LUA_TTABLE) {
-                /* traverse table */
-                int len =lua_rawlen(server.ls, -1);
-                addReplyMultiBulkLen(c, (long)len);
-                lua_pushnil(server.ls);
-                while (lua_next(server.ls, -2)) {
-                    const char* v = lua_tostring(server.ls, -1);
-                    robj *o =createStringObject((char*)v, v ? strlen(v) : 0);
-                    addReplyBulk(c, o);
-                    decrRefCount(o);
-                    lua_pop(server.ls, 1);
-                }
-            } else {
-                addReplyErrorFormat(c, "cannot support second return lua type '%s'", lua_typename(server.ls, type));
-            }
+            luaReplyToRedisReply(c, server.ls);
         }
-        /* consume stack ,avoid memory increase*/
-        lua_pop(server.ls, 2);
     }
 }
 
@@ -314,4 +265,68 @@ ugCommand *lookupCommand(char *key) {
         if (de) return dictGetEntryVal(de);
     }
     return NULL;
+}
+
+void luaReplyToRedisReply(ugClient *c, lua_State *lua) {
+    int t = lua_type(lua,-1);
+
+    switch(t) {
+    case LUA_TSTRING:
+        addReplyBulkCBuffer(c,(char*)lua_tostring(lua,-1),lua_strlen(lua,-1));
+        break;
+    case LUA_TBOOLEAN:
+        addReply(c,lua_toboolean(lua,-1) ? shared.cone : shared.nullbulk);
+        break;
+    case LUA_TNUMBER:
+        addReplyLongLong(c,(long long)lua_tonumber(lua,-1));
+        break;
+    case LUA_TTABLE:
+        /* We need to check if it is an array, an error, or a status reply.
+         * Error are returned as a single element table with 'err' field.
+         * Status replies are returned as single element table with 'ok' field */
+        lua_pushstring(lua,"err");
+        lua_gettable(lua,-2);
+        t = lua_type(lua,-1);
+        if (t == LUA_TSTRING) {
+            sds err = sdsnew(lua_tostring(lua,-1));
+            sdsmapchars(err,"\r\n","  ",2);
+            addReplySds(c,sdscatprintf(sdsempty(),"-%s\r\n",err));
+            sdsfree(err);
+            lua_pop(lua,2);
+            return;
+        }
+
+        lua_pop(lua,1);
+        lua_pushstring(lua,"ok");
+        lua_gettable(lua,-2);
+        t = lua_type(lua,-1);
+        if (t == LUA_TSTRING) {
+            sds ok = sdsnew(lua_tostring(lua,-1));
+            sdsmapchars(ok,"\r\n","  ",2);
+            addReplySds(c,sdscatprintf(sdsempty(),"+%s\r\n",ok));
+            sdsfree(ok);
+            lua_pop(lua,1);
+        } else {
+            void *replylen = addDeferredMultiBulkLength(c);
+            int j = 1, mbulklen = 0;
+
+            lua_pop(lua,1); /* Discard the 'ok' field value we popped */
+            while(1) {
+                lua_pushnumber(lua,j++);
+                lua_gettable(lua,-2);
+                t = lua_type(lua,-1);
+                if (t == LUA_TNIL) {
+                    lua_pop(lua,1);
+                    break;
+                }
+                luaReplyToRedisReply(c, lua);
+                mbulklen++;
+            }
+            setDeferredMultiBulkLength(c,replylen,mbulklen);
+        }
+        break;
+    default:
+        addReply(c,shared.nullbulk);
+    }
+    lua_pop(lua,1);
 }
