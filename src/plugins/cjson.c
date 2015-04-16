@@ -1258,7 +1258,7 @@ int luaopen_cjson(lua_State *l) {
     lua_settable(l, LUA_REGISTRYINDEX);
 
 //   luaL_register(l, "cjson", reg);
-    luaL_newlib(l,reg);
+    luaL_newlib(l, reg);
     /* Set cjson.null */
     lua_pushlightuserdata(l, NULL);
     lua_setfield(l, -2, "null");

@@ -29,6 +29,8 @@ static void unloadCommand(ugClient *c);
 
 static void execCommand(ugClient *c);
 
+static void evalCommand(ugClient *c);
+
 static  ugCommand redisCommandTable[] = {
     {"auth", authCommand, 1, 0, 0},
     {"usage", usageCommand , 0, 0, 0},
@@ -46,6 +48,7 @@ static  ugCommand redisCommandTable[] = {
     {"load", loadCommand , -1, 0, 0},
     {"unload", unloadCommand , -1, 0, 0},
     {"exec", execCommand , -1, 0, 0},
+    {"eval", evalCommand , -1, 0, 0},
 
     {NULL, NULL, 0, 0, 0}
 };
@@ -194,6 +197,20 @@ static void execCommand(ugClient *c) {
             luaReplyToRedisReply(c, server.ls);
         }
     }
+}
+
+static void evalCommand(ugClient *c) {
+#if 0
+    /* TODO here */
+    int  err = 0;
+    if (c->argc == 1) {
+        addReplyErrorFormat(c,  "wrong number of arguments for '%s' command",  c->argv[0]) ;
+        return;
+    }
+    err = lua_pcall(server.ls, c->argv[1], 0, 0);
+
+    lua_gc(server.ls, LUA_GCSTEP, 1);
+#endif
 }
 
 static void unloadCommand(ugClient *c) {

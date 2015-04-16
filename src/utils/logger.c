@@ -25,17 +25,17 @@ static const char *const log_array[]= {"[FATAL]",
 
 static int   loglv    = LOGTRACE;
 static const  char *const defaultfilename =  APPNAME".log";
-static char *logfilename =  NULL    ;
+static char *logfilename = NULL;
+static FILE *logfp = NULL;
 
 int logger_open(const char *logfile, int level) {
-    FILE *logfp = fopen(logfile, "a");
+    logfp = fopen(logfile, "a");
     int len = strlen(logfile) + 1;
     char buff[MAX_STRING_LEN]= {0};
     if (logfp == NULL) {
         fprintf(stderr, "open log file %s failed",logfile);
         return UGERR;
     }
-    fclose(logfp);
 
     loglv = level;
 
@@ -59,21 +59,17 @@ int logger_open(const char *logfile, int level) {
 
 void logger_write(int level, const char *file, int line, const char *fmt, ...) {
     char buffer[128]= {0};
-    FILE *logfp = NULL;
     va_list vl;
     time_t now ;
     struct tm *ptm = NULL;
-
+    int nwrite = 0;
+    int ntry = 1;
     if (level > loglv ) {
         return;
     }
+
     if (NULL == logfilename) {
         logfilename = (char *) defaultfilename;
-    }
-    logfp = fopen(logfilename, "a");
-    if (logfp == NULL) {
-        fprintf(stderr, "open log file %s failed %s", logfilename, xerrmsg());
-        return;
     }
 
     time(&now);
@@ -82,15 +78,26 @@ void logger_write(int level, const char *file, int line, const char *fmt, ...) {
     snprintf(buffer, 128, "[%04d-%02d-%02d %02d:%02d:%02d]",
              ptm->tm_year + 1900, ptm->tm_mon + 1, ptm->tm_mday,
              ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
-    fprintf(logfp, "%s %s [%d] [%s:%d] ",buffer, log_array[level-1], getpid(), file, line);
+    do {
+        if (logfp) {
+            nwrite = fprintf(logfp, "%s %s [%d] [%s:%d] ",buffer, log_array[level-1], getpid(), file, line);
+        }
+        if (nwrite > 0) break;
 
-    va_start(vl,fmt);
-    vfprintf(logfp,fmt,vl);
-    va_end(vl);
-    fprintf(logfp,ENDFLAG);
+        if (logfp) fclose(logfp);
 
-    if (fclose(logfp)) {
-        fprintf(stderr, "close %s failed %s", logfilename, xerrmsg());
+        logfp = fopen(logfilename, "a");
+        if (logfp == NULL) {
+            fprintf(stderr, "open log file %s failed %s", logfilename, xerrmsg());
+            break;
+        }
+    } while (ntry--);
+
+    if (logfp) {
+        va_start(vl, fmt);
+        vfprintf(logfp, fmt, vl);
+        va_end(vl);
+        fprintf(logfp, ENDFLAG);
     }
 }
 
@@ -99,4 +106,5 @@ void logger_close(void) {
             (logfilename != defaultfilename)) {
         zfree(logfilename);
     }
+    if (logfp) fclose(logfp);
 }

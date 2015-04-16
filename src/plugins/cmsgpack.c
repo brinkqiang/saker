@@ -695,7 +695,7 @@ static const struct luaL_Reg thislib[] = {
 
 LUAMOD_API int luaopen_cmsgpack (lua_State *L) {
    // luaL_register(L, "cmsgpack", thislib);
-    luaL_newlib(L,thislib);
+    luaL_newlib(L, thislib);
     lua_pushliteral(L, LUACMSGPACK_VERSION);
     lua_setfield(L, -2, "_VERSION");
     lua_pushliteral(L, LUACMSGPACK_COPYRIGHT);
