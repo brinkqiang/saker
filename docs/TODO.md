@@ -9,3 +9,7 @@
     lua_sethook
 * 收集coredump
     
+
+* luaworkCallByRef 返回结果和命令 exec调用结果格式一致，都采用redis结构
+* 增加配置文件中配置 cpath, path 的配置项
+* 将 luasocket， sqlite 整理为自编译动态库 
