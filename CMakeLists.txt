@@ -62,7 +62,7 @@ add_custom_command(OUTPUT ${LuaLib}
                   PRE_BUILD 
                   COMMAND export CFLAGS="$CFLAGS -Wno-deprecated-declarations"
                   COMMAND make ansi
-                  COMMAND make install INSTALL_TOP=${ThdInstallDir} LUA_COMPAT_ALL=1
+                  COMMAND make install INSTALL_TOP=${ThdInstallDir} LUA_COMPAT_ALL=1 LUA_USE_DLOPEN=1
                   WORKING_DIRECTORY ${ThdDir}/lua-5.2.3
                   COMMENT "build lualib")
 
