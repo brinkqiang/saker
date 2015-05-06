@@ -28,9 +28,10 @@ if [ $? -eq 0 ];then
     test -d cmake_build && rm -rf cmake_build
     mkdir -p cmake_build
     cd cmake_build
-    cmake ../. ${BUILD_TYPE} $1 $2 $3 $4 $5 && make 
+    cmake ../. ${BUILD_TYPE} $@ && make 
     if [ $? -ne 0 ]; then
         echo "build failed."
+		exit 1
     fi
 else 
     cd build/gnu

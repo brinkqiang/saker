@@ -31,7 +31,7 @@ if (UNIX)
     set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
     set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
     # -std=gnu99 -pedantic -Wshadow -Wunreachable-code -Wstrict-prototypes
-    set(CMAKE_C_FLAGS "-Wall -Wstrict-prototypes -Wno-strict-aliasing -Wno-unused-function -Wno-strict-aliasing -DLUA_COMPAT_ALL")
+    set(CMAKE_C_FLAGS "-Wall -Wstrict-prototypes -Wno-strict-aliasing -Wno-unused-function -Wno-strict-aliasing -Wunused-but-set-variable -DLUA_COMPAT_ALL")
     set(CMAKE_C_FLAGS_DEBUG "-O0 -g3 -DDEBUG -Werror")
     set(CMAKE_C_FLAGS_RELEASE "-O2 -g2 -DNDEBUG")
 else ()

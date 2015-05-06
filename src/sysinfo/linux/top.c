@@ -123,8 +123,7 @@ int updateProcess(struct processInfo *proc) {
     int  ret = UGERR;
     char buffer[4096], *p, *q;
     int fd, len;
-    int fullcmd;
-    uint64_t cputime ;
+
     /* use getpagesize()  ? */
     uint64_t page = sysconf(_SC_PAGESIZE);
     pid_t  pid = proc->pid;
@@ -145,8 +144,6 @@ int updateProcess(struct processInfo *proc) {
             }
             xfrm_cmdline(buffer, len);
             update_procname(proc, buffer);
-        } else {
-            fullcmd = 0;
         }
         close(fd);
     }
@@ -234,7 +231,9 @@ int updateProcess(struct processInfo *proc) {
      * HZ is defined in "asm/param.h"  and it is usually 1/100s but on
      * alpha system it is 1/1024s
      */
-    cputime     = ((float)(proc->time) * 10.0) / HZ;
+    /*
+     * cputime     = ((float)(proc->time) * 10.0) / HZ;
+     */
 
     proc->pri = strtol(p, &p, 10);  /* priority */
     proc->nice = strtol(p, &p, 10);   /* nice */
