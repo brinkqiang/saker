@@ -1,0 +1,3 @@
+[submodule "deps/luasocket"]
+	path = deps/luasocket
+	url = https://github.com/diegonehab/luasocket

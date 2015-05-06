@@ -32,9 +32,9 @@ void luaworkClose( lua_State *L ) {
 void luaworkSetEnv(lua_State *L, const char *key, const char *value) {
     lua_getglobal(L, key);
     ugAssert(lua_isnil(L, -1));
-    lua_pop(L,1);
-    lua_pushstring(L,value);
-    lua_setglobal(L,key);
+    lua_pop(L, 1);
+    lua_pushstring(L, value);
+    lua_setglobal(L, key);
 }
 
 const char *luaworkGetEnv(lua_State *L, const char *key) {
@@ -63,24 +63,7 @@ int luaworkDoFile(lua_State *L,const char *path , char *err) {
         return UGERR;
     }
     fclose(fp);
-    /*
-    fseek(fp,0,SEEK_END);
-    len = ftell(fp);
-    rewind(fp);
 
-    buff = (char*)zmalloc(len+1);
-    memset(buff,0,len+1);
-    len = fread(buff,sizeof(char),len,fp);
-    fclose(fp);
-
-    ret = luaworkDoString(L, buff, err);
-    if (ret != UGOK) {
-        char buff[LUAWORK_ERR_LEN] = {0};
-        luaworkSetError(buff, "dofile %s failed. err:%s", path, err);
-        luaworkSetError(err, buff);
-    }
-    zfree(buff);
-    */
     if (0 == luaL_dofile(L, path)) return UGOK;
 
     luaworkSetError(err, "do lua code failed :%s", lua_tostring(L,1));
@@ -135,20 +118,19 @@ void luaworkUnrefFunction(lua_State *L, LUA_HANDLE handle,char *err) {
 }
 
 int luaworkInnerCall(lua_State *L, char *err, const char *sig, va_list vl) {
-    const char *p ;
-    int narg,nres=0;
+    int narg, nres=0;
     int ret = UGOK;
     //push param
     for (narg=0; *sig; narg++) {
         switch(*sig++) {
         case 'd':
-            lua_pushnumber(L,va_arg(vl,double));
+            lua_pushnumber(L, va_arg(vl,double));
             break;
         case 'i':
-            lua_pushinteger(L,va_arg(vl,int));
+            lua_pushinteger(L, va_arg(vl,int));
             break;
         case 's':
-            lua_pushstring(L,va_arg(vl,char *));
+            lua_pushstring(L, va_arg(vl,char *));
             break;
         case '>':
             goto ENDARGS;
@@ -160,47 +142,27 @@ int luaworkInnerCall(lua_State *L, char *err, const char *sig, va_list vl) {
 
 ENDARGS:
     nres = strlen(sig);
-    if (lua_pcall(L,narg,nres,0) != 0) {
+    if (lua_pcall(L, narg, nres, 0) != 0) {
         luaworkSetError(err, "%s", lua_tostring(L,-1));
         lua_pop(L, 1);
         return UGERR;
     }
     lua_gc(L, LUA_GCSTEP, 1);
-    nres = -nres;
-    while (*sig) {
-        if (ret == UGERR) break;
-        switch(*sig++) {
-        case 'b':
-            if (lua_isboolean(L, nres)) *va_arg(vl,int *) = lua_toboolean(L,nres);
-            else  {
-                luaworkSetError(err, "%s-%c","wrong result,fmt[b] is not match");
-                ret = UGERR;
-            }
-            break;
-        case 'd':
-            if(!lua_isnumber(L,nres)) {
-                luaworkSetError(err, "%s-%c","wrong result,fmt[d] is not match");
-                ret = UGERR;
-            }
-            *va_arg(vl,double *) = lua_tonumber(L,nres);
-            break;
-        case 'i':
-            if (lua_isnumber(L,nres)) *va_arg(vl,int *) = lua_tointeger(L,nres);
-            else {
-                luaworkSetError(err, "%s-%c","wrong result,fmt[i] is not match");
-                ret = UGERR;
-            }
-            break;
-        case 's':
-            p = lua_tostring(L, nres);
-            *va_arg(vl,const char **) = p;
-            break;
-        default:
-            luaworkSetError(err, "%s-%c","invalid option",*(sig-1));
-            ret = UGERR;
-        }
-        nres++;
+    switch(lua_type(L, -1)) {
+      case LUA_TTABLE:
+          lua_pushstring(L, "err");
+          lua_gettable(L, -2);
+          if (lua_type(L, -1) == LUA_TSTRING) {
+              ret = UGERR;
+              luaworkSetError(err, "lua function return err:'%s'", lua_tostring(L, -1));
+              lua_pop(L, 2);
+          }
+          lua_pop(L, 1);
+          break;
+      default:
+          break;
     }
+    lua_pop(L, 1);
     return ret;
 }
 

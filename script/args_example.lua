@@ -7,7 +7,7 @@ function args_example(args)
     do
     print(k..":"..v)
     end
-    return true,"a","b"
+    return true
 end
 
 saker.register("args_example", "args_example", PROP_PASSIVITY)

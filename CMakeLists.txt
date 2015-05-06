@@ -38,6 +38,7 @@ else ()
     message(FATAL_ERROR, "must use gcc in unix")
 endif ()
 
+set(LuaRocksDir ${EXECUTABLE_OUTPUT_PATH})
 set(ThdInstallDir ${PROJECT_SOURCE_DIR}/cmake_build/thd-usr)
 set(ThdDir ${PROJECT_SOURCE_DIR}/deps)
 set(SqliteDir ${PROJECT_SOURCE_DIR}/deps/sqlite-3.8.8)
@@ -51,20 +52,28 @@ set(HiRedisLib ${ThdInstallDir}/lib/libhiredis.a)
 set(LuaLib ${ThdInstallDir}/lib/liblua.a)
 set(JeMallocLib ${ThdInstallDir}/lib/libjemalloc.a)
 
+set(LuaSocketSO ${LuaLibDir}/unix.so)
+
+add_custom_command(OUTPUT ${LuaLib}
+                  PRE_BUILD 
+                  COMMAND make posix MYCFLAGS="-DLUA_USE_DLOPEN -DLUA_COMPAT_ALL" MYLIBS="-ldl"
+                  COMMAND make install INSTALL_TOP=${ThdInstallDir}
+                  WORKING_DIRECTORY ${ThdDir}/lua-5.2.3
+                  COMMENT "build lualib")
+
+add_custom_command(OUTPUT ${LuaSocketSO}
+                  PRE_BUILD 
+                  COMMAND make PLAT=linux DEBUG=DEBUG LUAV=5.2 LUAINC_linux=${ThdInstallDir}/include prefix=${LuaRocksDir} linux
+				  COMMAND make PLAT=linux DEBUG=DEBUG LUAV=5.2 LUAINC_linux=${ThdInstallDir}/include prefix=${LuaRocksDir} install
+                  WORKING_DIRECTORY ${ThdDir}/luasocket/src
+                  COMMENT "build luasocket")
+
 add_custom_command(OUTPUT ${HiRedisLib}
                   PRE_BUILD 
                   COMMAND make static
                   COMMAND make PREFIX=${ThdInstallDir} install
                   WORKING_DIRECTORY ${ThdDir}/hiredis
                   COMMENT "build hiredis")
-
-add_custom_command(OUTPUT ${LuaLib}
-                  PRE_BUILD 
-                  COMMAND export CFLAGS="$CFLAGS -Wno-deprecated-declarations"
-                  COMMAND make ansi
-                  COMMAND make install INSTALL_TOP=${ThdInstallDir} LUA_COMPAT_ALL=1 LUA_USE_DLOPEN=1
-                  WORKING_DIRECTORY ${ThdDir}/lua-5.2.3
-                  COMMENT "build lualib")
 
 #set(JEMALLOC_CFLAGS "-std=gnu99 -Wall -pipe -g3 -O3 -funroll-loops" $(CFLAGS))
 add_custom_command(OUTPUT ${JeMallocLib}
@@ -78,7 +87,7 @@ add_custom_command(OUTPUT ${JeMallocLib}
                   WORKING_DIRECTORY ${ThdDir}/jemalloc-3.6.0
                   COMMENT "build libjemalloc")
                   
-add_custom_target(run ALL DEPENDS ${HiRedisLib} ${LuaLib} ${JeMallocLib})
+add_custom_target(run ALL DEPENDS ${LuaLib} ${HiRedisLib} ${JeMallocLib} ${LuaSocketSO})
 
 if (ENABLE_TESTS)
     include(CTest)

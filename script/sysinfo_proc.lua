@@ -26,7 +26,9 @@ function sysinfo_example()
 
     if err ~= nil then
         saker.log(LOG_ERROR , err)
-        return false, err
+		local retval = {}
+		retval['err'] = err
+        return retval
     end
 
     saker.log(LOG_INFO, ctx)

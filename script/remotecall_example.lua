@@ -15,7 +15,7 @@ function system(args)
     if err ~= nil then
         return false, err
     end
-    return true,ctx
+    return ctx
 end
 
 saker.register("system", "system", PROP_PASSIVITY)

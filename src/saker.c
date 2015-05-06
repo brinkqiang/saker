@@ -60,21 +60,15 @@ static void setupSignalHandler(void) {
 static int  timerHandler(aeEventLoop *el, long long id, void *clientData) {
     dictIterator *di = dictGetIterator(server.tasks);
     dictEntry *de;
-    const char *innererr = NULL;
-    int ret = 1;
     char errmsg[LUAWORK_ERR_LEN] = {0};
 
     while ((de = dictNext(di)) != NULL) {
         ugTaskType *ptask = dictGetEntryVal(de);
-        ret = 1;
         ugAssert(ptask != NULL);
         if (ptask->property == PROP_CYCLE || ptask->property == PROP_ONCE ) {
-            if (luaworkCallByRef(server.ls, ptask->handle, errmsg, ">bs", &ret, &innererr) == UGERR) {
+            if (luaworkCallByRef(server.ls, ptask->handle, errmsg, ">t") == UGERR) {
                 LOG_ERROR("do task failed ,alias: '%s', err: '%s'", ptask->alias, errmsg);
                 continue;
-            }
-            if (ret == 0) {
-                LOG_ERROR("do task failed ,alias: '%s', err: '%s'", ptask->alias, innererr);
             }
         }
         if (ptask->property == PROP_ONCE) {
@@ -161,6 +155,8 @@ void freeServer(struct sakerServer *server) {
     if (server->tasks) destroyTaskMap(server->tasks);
 
     if (server->process) destroyTop(server->process);
+
+    if (server->app_dir) zfree(server->app_dir);
 
     if (server->ls) luaworkClose(server->ls);
     if (server->pidfile && server->iskiller==UGOK) pidfile_remove(server->pidfile);
@@ -313,7 +309,13 @@ static void doOptions(int argc, char **argv) {
 int main(int argc,char **argv) {
     initServer(&server);
 
-    if (xchtoapppath() != UGOK) {
+    server.app_dir = zmalloc(MAX_STRING_LEN);
+    if (xgetapppath(server.app_dir) != UGOK) {
+        fprintf(stderr, "get self dir failed.");
+        exit(1);
+    }
+
+    if (xchdir(server.app_dir) != UGOK) {
         fprintf(stderr, "chdir failed");
         exit(1);
     }

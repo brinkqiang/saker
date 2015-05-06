@@ -4,7 +4,7 @@ function pidof_example()
     if pid ~= nil then 
       print("nginx pid is "..pid)
     end
-    return false, err
+    return false
 end
 
 --saker.register("pidof_example", "pidof_example", PROP_CYCLE)

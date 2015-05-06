@@ -31,6 +31,9 @@ struct sakerServer
     aeEventLoop  *el;
      
     /* private */
+    char         *home_dir;
+    char         *app_dir;
+
     char         *pidfile;
     config_t     *config;
     char         *configfile;
