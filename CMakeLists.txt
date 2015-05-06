@@ -63,8 +63,8 @@ add_custom_command(OUTPUT ${LuaLib}
 
 add_custom_command(OUTPUT ${LuaSocketSO}
                   PRE_BUILD 
-                  COMMAND make PLAT=linux DEBUG=DEBUG LUAV=5.2 LUAINC_linux=${ThdInstallDir}/include prefix=${LuaRocksDir} linux
-				  COMMAND make PLAT=linux DEBUG=DEBUG LUAV=5.2 LUAINC_linux=${ThdInstallDir}/include prefix=${LuaRocksDir} install
+                  COMMAND make PLAT=linux LUAV=5.2 LUAINC_linux=${ThdInstallDir}/include linux
+				  COMMAND make PLAT=linux prefix=${LuaRocksDir} CDIR_linux=lualib LDIR_linux=lualib install
                   WORKING_DIRECTORY ${ThdDir}/luasocket/src
                   COMMENT "build luasocket")
 
